@@ -15,7 +15,7 @@
   var client = null;
   try { client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey); } catch (e) {}
 
-  var state = { role: "child", children: [], childId: null, grades: [], goal: null, selGrade: null };
+  var state = { role: "child", children: [], childId: null, grades: [], goal: null, selGrade: null, pendingAll: [] };
 
   /* ---------- modal ---------- */
   var modalSubmit = null;
@@ -63,6 +63,7 @@
       var g = req(await client.from("goals").select("*").eq("child_id", cid).eq("active", true).order("created_at", { ascending: false }).limit(1));
       state.grades = grades; state.goal = g[0] || null;
     } catch (e) { state.grades = []; state.goal = null; toast("Ошибка загрузки: " + (e.message || e)); }
+    try { state.pendingAll = req(await client.from("grades").select("*").eq("status", "pending").order("created_at", { ascending: true })); } catch (e2) { state.pendingAll = []; }
     render();
   }
 
@@ -78,6 +79,7 @@
     return { sum: sum, fives: fives, fours: fours, lows: lows, count: cs.length, avg: cs.length ? gsum / cs.length : null, streak: streak, cs: cs };
   }
   function child() { return state.children.filter(function (c) { return c.id === state.childId; })[0] || { name: "—", emoji: "🧒", paid_total: 0 }; }
+  function childLabel(id) { var c = state.children.filter(function (x) { return x.id === id; })[0]; return c ? ((c.emoji ? c.emoji + " " : "") + c.name) : ""; }
 
   /* ---------- actions ---------- */
   var refreshTimer = null;
@@ -117,6 +119,7 @@
     catch (e) { toast("Не удалось отправить: " + (e.message || e)); }
   }
   async function removeDraft(id) {
+    if (String(id).indexOf("tmp-") === 0) { state.grades = state.grades.filter(function (x) { return x.id !== id; }); state.pendingAll = (state.pendingAll || []).filter(function (x) { return x.id !== id; }); render(); return; }
     try { req(await client.from("grades").delete().eq("id", id)); await loadChild(); }
     catch (e) { toast("Нельзя удалить: " + (e.message || e)); }
   }
@@ -278,11 +281,11 @@
     $("childQueue").querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { removeDraft(b.dataset.del); }; });
   }
   function renderParentQueue() {
-    var items = pending();
+    var items = (state.pendingAll || []).slice().sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); });
     if (!items.length) { $("parentQueue").innerHTML = '<div class="empty">Нет новых заявок.</div>'; return; }
     $("parentQueue").innerHTML = items.map(function (p) {
       var opts = [2, 3, 4, 5].map(function (g) { return '<option value="' + g + '"' + (g === p.grade ? " selected" : "") + ">" + g + "</option>"; }).join("");
-      return '<li><div class="q-main"><div class="q-sub">' + esc(p.subject) + '</div><div class="q-meta">' + dateStr(p.created_at) + " · " + checks(p.status) + "</div></div>" +
+      return '<li><div class="q-main"><div class="q-sub">' + esc(childLabel(p.child_id)) + " — " + esc(p.subject) + '</div><div class="q-meta">' + dateStr(p.created_at) + " · " + checks(p.status) + "</div></div>" +
         '<select data-g="' + p.id + '">' + opts + "</select>" +
         '<button class="btn btn-ok btn-sm" data-ok="' + p.id + '">Подтвердить</button>' +
         '<button class="btn btn-no btn-sm" data-no="' + p.id + '">Отклонить</button></li>';
