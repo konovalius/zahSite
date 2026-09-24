@@ -57,9 +57,12 @@
     } catch (e) { toast("Ошибка загрузки: " + (e.message || e)); }
   }
   async function loadChild() {
-    state.grades = req(await client.from("grades").select("*").eq("child_id", state.childId).order("created_at", { ascending: true }));
-    var g = req(await client.from("goals").select("*").eq("child_id", state.childId).eq("active", true).order("created_at", { ascending: false }).limit(1));
-    state.goal = g[0] || null;
+    try {
+      var cid = state.childId;
+      var grades = req(await client.from("grades").select("*").eq("child_id", cid).order("created_at", { ascending: true }));
+      var g = req(await client.from("goals").select("*").eq("child_id", cid).eq("active", true).order("created_at", { ascending: false }).limit(1));
+      state.grades = grades; state.goal = g[0] || null;
+    } catch (e) { state.grades = []; state.goal = null; toast("Ошибка загрузки: " + (e.message || e)); }
     render();
   }
 
@@ -356,7 +359,7 @@
     document.querySelectorAll(".grade-btn").forEach(function (b) { b.onclick = function () { selectGrade(Number(b.dataset.grade)); }; });
     $("addBtn").onclick = addDraft; $("micBtn").onclick = startMic;
     $("newGoalBtn").onclick = newGoal; $("editPaidBtn").onclick = editPaid; $("addChildBtn").onclick = addChild;
-    $("childSel").onchange = async function () { state.childId = this.value; localStorage.setItem("gt.child", state.childId); await loadChild(); };
+    $("childSel").onchange = async function () { state.childId = this.value; localStorage.setItem("gt.child", state.childId); state.grades = []; state.goal = null; render(); await loadChild(); };
     $("modalOk").onclick = function () { if (modalSubmit) modalSubmit(collect()); };
     $("modalCancel").onclick = closeModal;
     $("modal").addEventListener("click", function (e) { if (e.target === $("modal")) closeModal(); });
