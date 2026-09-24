@@ -77,6 +77,8 @@
   function child() { return state.children.filter(function (c) { return c.id === state.childId; })[0] || { name: "—", emoji: "🧒", paid_total: 0 }; }
 
   /* ---------- actions ---------- */
+  var refreshTimer = null;
+  function scheduleRefresh() { clearTimeout(refreshTimer); refreshTimer = setTimeout(function () { loadChild(); }, 400); }
   function normalizeSubject(s) {
     s = String(s || "").replace(/\s+/g, " ").trim();
     if (!s) return s;
@@ -94,13 +96,15 @@
     if (!subj || g == null) return;
     state.sending = true;
     $("subject").value = ""; selGradeReset();
-    toast("Отправляю родителю…");
+    var tmp = { id: "tmp-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), subject: subj, grade: g, status: "pending", reward: 0, created_at: new Date().toISOString(), confirmed_at: null };
+    state.grades.push(tmp); render();
     try {
-      req(await client.from("grades").insert({ child_id: state.childId, subject: subj, grade: g, status: "pending", reward: 0 }));
+      var ins = await client.from("grades").insert({ child_id: state.childId, subject: subj, grade: g, status: "pending", reward: 0 });
+      if (ins.error) throw ins.error;
       toast("Отправлено родителю (2 галочки)");
-      await loadChild();
-      var q = $("childQueue"); if (q && q.scrollIntoView) q.scrollIntoView({ behavior: "smooth", block: "center" });
+      scheduleRefresh();
     } catch (e) {
+      state.grades = state.grades.filter(function (x) { return x.id !== tmp.id; }); render();
       toast("Не удалось отправить: " + (e.message || e));
       $("subject").value = subj; selectGrade(g);
     } finally { state.sending = false; }
@@ -363,8 +367,8 @@
     if (!client) { toast("Не загрузилась библиотека данных. Обнови страницу (Ctrl+F5)."); return; }
     try { var s = await client.auth.getSession(); if (!s.data.session) { var r = await client.auth.signInAnonymously(); if (r.error) throw r.error; } }
     catch (e) { toast("Не удалось подключиться: " + (e.message || e)); }
-    client.channel("gt-live").on("postgres_changes", { event: "*", schema: "public", table: "grades" }, function () { loadChild(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "goals" }, function () { loadChild(); }).subscribe();
+    client.channel("gt-live").on("postgres_changes", { event: "*", schema: "public", table: "grades" }, function () { scheduleRefresh(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "goals" }, function () { scheduleRefresh(); }).subscribe();
     await loadAll();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
