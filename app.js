@@ -91,8 +91,8 @@
   async function addDraft() {
     var subj = normalizeSubject($("subject").value); if (!subj || state.selGrade == null) return;
     try {
-      req(await client.from("grades").insert({ child_id: state.childId, subject: subj, grade: state.selGrade, status: "draft", reward: 0 }));
-      $("subject").value = ""; selGradeReset(); toast("Черновик добавлен (1 галочка)"); await loadChild();
+      req(await client.from("grades").insert({ child_id: state.childId, subject: subj, grade: state.selGrade, status: "pending", reward: 0 }));
+      $("subject").value = ""; selGradeReset(); toast("Отправлено родителю (2 галочки)"); await loadChild();
     } catch (e) { toast("Не удалось: " + (e.message || e)); }
   }
   async function sendGrade(id) {
@@ -253,7 +253,7 @@
     $("childQueue").innerHTML = items.map(function (p) {
       var act = p.status === "draft"
         ? '<button class="btn btn-primary btn-sm" data-send="' + p.id + '">Отправить</button><button class="btn btn-no btn-sm" data-del="' + p.id + '">Удалить</button>'
-        : '<span class="pill p-wait">ждёт подтверждения</span>';
+        : '<span class="pill p-wait">ждёт подтверждения</span><button class="btn btn-no btn-sm" data-del="' + p.id + '">Отменить</button>';
       return '<li><div class="q-main"><div class="q-sub">' + esc(p.subject) + '</div><div class="q-meta">' + dateStr(p.created_at) + '</div></div>' +
         '<span class="pill p-' + p.grade + '">' + p.grade + "</span>" + checks(p.status) + act + "</li>";
     }).join("");
