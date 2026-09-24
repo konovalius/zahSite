@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Дневник оценок</title>
+<style>
+  :root{
+    --bg:#eef1f7; --card:#fff; --ink:#171a21; --muted:#6b7280; --line:#e5e8ef;
+    --brand:#3b62f6; --brand-2:#7a9bff; --ok:#16a34a; --ok-soft:#e8f8ee;
+    --g4:#2563eb; --g3:#d97706; --g2:#dc2626; --gold:#f59e0b; --warm:#fff7ea;
+    --shadow:0 8px 26px rgba(20,30,60,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);line-height:1.5;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px}
+  .hidden{display:none !important}
+  header.top{position:sticky;top:0;z-index:20;background:rgba(238,241,247,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0}
+  .brand{font-weight:800;font-size:18px;display:flex;align-items:center;gap:8px}
+  .brand .logo{width:30px;height:30px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:16px}
+  .spacer{flex:1}
+  select,input[type=text],input[type=url],input[type=number],input[type=password]{
+    padding:10px 12px;border:1px solid #d5dae6;border-radius:11px;font:inherit;background:#fff}
+  select:focus,input:focus{outline:2px solid #e9eeff;border-color:var(--brand)}
+  .childsel{display:flex;align-items:center;gap:8px}
+  .switcher{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px;box-shadow:var(--shadow)}
+  .switcher button{border:0;background:transparent;padding:7px 16px;border-radius:999px;font:inherit;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer}
+  .switcher button.active{background:var(--brand);color:#fff}
+  main{padding:18px 0 70px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:860px){.cols{grid-template-columns:1.05fr .95fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+  .card h2{font-size:16px;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  label{display:block;font-size:13px;font-weight:600;color:#374151;margin:12px 0 6px}
+  .muted{color:var(--muted)}
+  .grades{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .grade-btn{border:2px solid var(--line);background:#fff;border-radius:12px;padding:12px 4px;font:inherit;font-weight:800;font-size:18px;cursor:pointer}
+  .grade-btn small{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-top:2px}
+  .grade-btn.sel-5{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .grade-btn.sel-4{background:#e8f0ff;border-color:var(--g4);color:var(--g4)}
+  .grade-btn.sel-3{background:#fff4e2;border-color:var(--g3);color:var(--g3)}
+  .grade-btn.sel-2{background:#fdeaea;border-color:var(--g2);color:var(--g2)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+  .btn{border:0;border-radius:11px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-primary:disabled{background:#c7cfe0;cursor:not-allowed}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn-ok{background:var(--ok);color:#fff}
+  .btn-no{background:#fff;border:1px solid var(--line);color:#b91c1c}
+  .btn-sm{padding:7px 12px;font-size:13px;border-radius:9px}
+  .pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+  .p-5{background:var(--ok-soft);color:var(--ok)} .p-4{background:#e8f0ff;color:var(--g4)}
+  .p-3{background:#fff4e2;color:var(--g3)} .p-2{background:#fdeaea;color:var(--g2)}
+  .p-wait{background:#fff7e6;color:#b45309} .p-draft{background:#eef1f7;color:#5b647a}
+  ul.queue{list-style:none;margin:0;padding:0}
+  ul.queue li{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  ul.queue .q-main{flex:1;min-width:130px}
+  ul.queue .q-sub{font-weight:700}
+  ul.queue .q-meta{font-size:12px;color:var(--muted)}
+  .checks{font-size:13px;font-weight:800;letter-spacing:-2px}
+  .checks.one{color:#9aa3b5} .checks.two{color:#9aa3b5} .checks.done{color:var(--brand)}
+  .tablewrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:480px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#6b7280}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+  .metric{background:#f8f9fc;border:1px solid var(--line);border-radius:13px;padding:13px}
+  .metric .v{font-size:22px;font-weight:800}
+  .metric .k{font-size:12px;color:var(--muted);margin-top:2px}
+  .metric.hl{background:var(--warm);border-color:#f3e2bd}
+  .levelbar{height:12px;border-radius:999px;background:#eef1f7;overflow:hidden;margin:8px 0 4px}
+  .levelbar > div{height:100%;background:linear-gradient(90deg,#7c9dff,#3b62f6);width:0%}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .badge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+  .badge.locked{opacity:.45;filter:grayscale(1)}
+  .stars{font-size:18px;letter-spacing:2px;color:var(--gold)}
+  .empty{color:var(--muted);font-size:14px;padding:14px;text-align:center;border:1px dashed var(--line);border-radius:12px}
+  .heat{display:grid;grid-auto-flow:column;gap:3px;overflow-x:auto;padding-bottom:6px}
+  .heat .week{display:grid;grid-template-rows:repeat(7,13px);gap:3px}
+  .heat i{width:13px;height:13px;border-radius:3px;background:#e6e9f1;display:block}
+  .heat i.l1{background:#cfe0ff}.heat i.l2{background:#8fb0ff}.heat i.l3{background:#5b82f6}.heat i.l4{background:#3b62f6}
+  .goal{display:flex;gap:14px;align-items:center}
+  .goal .thumb{width:84px;height:84px;border-radius:14px;background:#eef1f7;display:grid;place-items:center;font-size:30px;overflow:hidden;flex:none}
+  .goal .thumb img{width:100%;height:100%;object-fit:cover}
+  .goal .gbody{flex:1;min-width:0}
+  .goal .gtitle{font-weight:800}
+  .goal .sub{font-size:12px;color:var(--muted)}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#171a21;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:60}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .note{font-size:13px;background:#eef4ff;border:1px solid #d3e0ff;color:#25427e;border-radius:12px;padding:12px 14px;margin-top:14px}
+  .modal{position:fixed;inset:0;background:rgba(20,26,40,.45);display:grid;place-items:center;z-index:70;padding:16px}
+  .modal-box{background:#fff;border-radius:16px;padding:20px;max-width:360px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+  .modal-box h3{margin:0 0 6px;font-size:17px}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .chip{border:1px solid var(--line);background:#f8f9fc;border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .chip:hover{border-color:#c3ccdf;background:#eef1f7}
+  .chip:active{background:var(--brand);color:#fff;border-color:var(--brand)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap topbar">
+    <div class="brand"><span class="logo">🎓</span> Дневник оценок</div>
+    <div class="childsel">
+      <select id="childSel" aria-label="Ребёнок"></select>
+    </div>
+    <div class="spacer"></div>
+    <div class="switcher" role="tablist" aria-label="Роль">
+      <button id="tabChild" class="active" role="tab" aria-selected="true">👦 Ребёнок</button>
+      <button id="tabParent" role="tab" aria-selected="false">👨‍👩‍👧 Родитель</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- CHILD -->
+  <section id="childView" class="grid cols">
+    <div>
+      <div class="card">
+        <h2>✏️ Записать оценку</h2>
+        <label for="subject">Предмет</label>
+        <input id="subject" type="text" list="subjects" placeholder="Например: Математика" autocomplete="off">
+        <datalist id="subjects">
+          <option>Математика</option><option>Русский язык</option><option>Литература</option>
+          <option>Окружающий мир</option><option>Английский язык</option><option>История</option>
+          <option>География</option><option>Биология</option><option>Физика</option><option>Химия</option>
+          <option>Информатика</option><option>Физкультура</option><option>Музыка</option><option>ИЗО</option>
+        </datalist>
+        <div class="chips" id="subjChips"></div>
+        <label>Оценка</label>
+        <div class="grades" id="gradeBtns">
+          <button class="grade-btn" data-grade="5">5<small>200 ₽</small></button>
+          <button class="grade-btn" data-grade="4">4<small>150 ₽</small></button>
+          <button class="grade-btn" data-grade="3">3<small>0 ₽</small></button>
+          <button class="grade-btn" data-grade="2">2<small>0 ₽</small></button>
+        </div>
+        <div class="row">
+          <button id="micBtn" class="btn btn-ghost" type="button">🎤 Сказать</button>
+          <button id="addBtn" class="btn btn-primary" type="button" disabled>Добавить (черновик)</button>
+        </div>
+        <div class="hint" id="micHint">Черновик сохраняется сразу (1 галочка). Отправишь родителю — станет 2 галочки.</div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>📨 Мои заявки</h2>
+        <ul class="queue" id="childQueue"></ul>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>🎯 Цель-мечта</h2>
+        <div id="goalBox"></div>
+        <div class="row"><button id="newGoalBtn" class="btn btn-ghost btn-sm" type="button">Новая цель</button></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>🏆 Мой прогресс</h2>
+        <div class="metrics">
+          <div class="metric"><div class="v" id="mTotal">0 ₽</div><div class="k">Накоплено</div></div>
+          <div class="metric"><div class="v" id="mStreak">0</div><div class="k">Дней подряд с «5»</div></div>
+          <div class="metric"><div class="v" id="mConfirmed">0</div><div class="k">Зачтено</div></div>
+          <div class="metric"><div class="v" id="mAvg">—</div><div class="k">Средний балл</div></div>
+        </div>
+        <label style="margin-top:16px">Уровень <span id="lvlName" class="muted"></span></label>
+        <div class="levelbar"><div id="lvlFill"></div></div>
+        <div class="hint" id="lvlHint"></div>
+        <label>Звёзды</label>
+        <div class="stars" id="stars"></div>
+        <div class="note" id="motive" style="background:var(--warm);border-color:#f3e2bd;color:#7c5a12">Запиши первую оценку — и здесь появится прогресс!</div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>🔥 Активность (тепловая карта)</h2>
+        <div class="heat" id="heat"></div>
+        <div class="hint">Чем темнее клетка — тем больше «зачтённых» оценок в этот день.</div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>🎖️ Награды</h2>
+        <div class="badges" id="badges"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARENT -->
+  <section id="parentView" class="grid hidden">
+    <div class="card">
+      <h2>🔔 Заявки на подтверждение</h2>
+      <ul class="queue" id="parentQueue"></ul>
+      <div class="note">Можно изменить оценку перед подтверждением — выбери значение в списке.</div>
+    </div>
+
+    <div class="card">
+      <h2>📊 Итоги и таблица</h2>
+      <div class="metrics" style="margin-bottom:14px">
+        <div class="metric hl"><div class="v" id="pAccrued">0 ₽</div><div class="k">Начислено</div></div>
+        <div class="metric"><div class="v" id="pPaid">0 ₽</div><div class="k">Выплачено</div></div>
+        <div class="metric"><div class="v" id="pAvg">—</div><div class="k">Средний балл</div></div>
+      </div>
+      <div class="row" style="margin-top:0">
+        <button id="editPaidBtn" class="btn btn-ghost btn-sm" type="button">Изменить «выплачено»</button>
+        <button id="addChildBtn" class="btn btn-ghost btn-sm" type="button">Добавить ребёнка</button>
+      </div>
+      <div class="tablewrap" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Дата</th><th>Предмет</th><th class="num">Оценка</th><th class="num">Награда</th><th class="num">Итог</th></tr></thead>
+          <tbody id="entriesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal hidden" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">Подтверждение</h3>
+    <p class="muted" id="modalText" style="margin:6px 0 12px">Введи PIN</p>
+    <div id="modalFields"></div>
+    <div class="row" style="margin-top:14px">
+      <button id="modalOk" class="btn btn-primary" type="button">OK</button>
+      <button id="modalCancel" class="btn btn-ghost" type="button">Отмена</button>
+    </div>
+    <div class="hint" id="modalErr" style="color:#b91c1c"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="supabase.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
