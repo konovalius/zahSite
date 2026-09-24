@@ -101,7 +101,7 @@
     try {
       var ins = await client.from("grades").insert({ child_id: state.childId, subject: subj, grade: g, status: "pending", reward: 0 });
       if (ins.error) throw ins.error;
-      toast("Отправлено родителю (2 галочки)");
+      toast("Твоя заявка отправлена");
       scheduleRefresh();
     } catch (e) {
       state.grades = state.grades.filter(function (x) { return x.id !== tmp.id; }); render();
@@ -110,7 +110,7 @@
     } finally { state.sending = false; }
   }
   async function sendGrade(id) {
-    try { req(await client.from("grades").update({ status: "pending" }).eq("id", id)); toast("Отправлено родителю (2 галочки)"); await loadChild(); }
+    try { req(await client.from("grades").update({ status: "pending" }).eq("id", id)); toast("Твоя заявка отправлена"); await loadChild(); }
     catch (e) { toast("Не удалось отправить: " + (e.message || e)); }
   }
   async function removeDraft(id) {
