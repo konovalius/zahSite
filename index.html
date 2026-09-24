@@ -100,6 +100,8 @@
   .chip{border:1px solid var(--line);background:#f8f9fc;border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
   .chip:hover{border-color:#c3ccdf;background:#eef1f7}
   .chip:active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .compose{margin-top:12px;background:#eef4ff;border:1px solid #d3e0ff;border-radius:12px;padding:10px 12px;font-size:14px;color:#25427e}
+  .compose b{font-weight:800;color:var(--brand)}
 </style>
 </head>
 <body>
@@ -132,6 +134,7 @@
           <option>Информатика</option><option>Физкультура</option><option>Музыка</option><option>ИЗО</option>
         </datalist>
         <div class="chips" id="subjChips"></div>
+        <div class="compose hidden" id="composeBox"></div>
         <label>Оценка</label>
         <div class="grades" id="gradeBtns">
           <button class="grade-btn" data-grade="5">5<small>200 ₽</small></button>
