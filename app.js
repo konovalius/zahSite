@@ -10,7 +10,7 @@
   var SUBJECTS = ["Математика", "Русский язык", "Литература", "Окружающий мир", "Английский язык", "История", "Обществознание", "География", "Биология", "Физика", "Химия", "Информатика", "Технология", "Физкультура", "Музыка", "ИЗО", "ОБЖ"];
 
   var toastTimer = null;
-  function toast(m) { var t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600); }
+  function toast(m) { var t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1200); }
 
   var client = null;
   try { client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey); } catch (e) {}
