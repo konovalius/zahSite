@@ -89,12 +89,21 @@
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
   async function addDraft() {
-    var subj = normalizeSubject($("subject").value); if (!subj || state.selGrade == null) return;
+    if (state.sending) return;
+    var subj = normalizeSubject($("subject").value), g = state.selGrade;
+    if (!subj || g == null) return;
+    state.sending = true;
+    $("subject").value = ""; selGradeReset();
+    toast("Отправляю родителю…");
     try {
-      req(await client.from("grades").insert({ child_id: state.childId, subject: subj, grade: state.selGrade, status: "pending", reward: 0 }));
-      $("subject").value = ""; selGradeReset(); toast("Отправлено родителю (2 галочки)"); await loadChild();
+      req(await client.from("grades").insert({ child_id: state.childId, subject: subj, grade: g, status: "pending", reward: 0 }));
+      toast("Отправлено родителю (2 галочки)");
+      await loadChild();
       var q = $("childQueue"); if (q && q.scrollIntoView) q.scrollIntoView({ behavior: "smooth", block: "center" });
-    } catch (e) { toast("Не удалось: " + (e.message || e)); }
+    } catch (e) {
+      toast("Не удалось отправить: " + (e.message || e));
+      $("subject").value = subj; selectGrade(g);
+    } finally { state.sending = false; }
   }
   async function sendGrade(id) {
     try { req(await client.from("grades").update({ status: "pending" }).eq("id", id)); toast("Отправлено родителю (2 галочки)"); await loadChild(); }
