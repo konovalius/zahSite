@@ -93,6 +93,7 @@
     try {
       req(await client.from("grades").insert({ child_id: state.childId, subject: subj, grade: state.selGrade, status: "pending", reward: 0 }));
       $("subject").value = ""; selGradeReset(); toast("Отправлено родителю (2 галочки)"); await loadChild();
+      var q = $("childQueue"); if (q && q.scrollIntoView) q.scrollIntoView({ behavior: "smooth", block: "center" });
     } catch (e) { toast("Не удалось: " + (e.message || e)); }
   }
   async function sendGrade(id) {
@@ -279,7 +280,15 @@
   /* ---------- grade select ---------- */
   function selectGrade(g) { state.selGrade = g; document.querySelectorAll(".grade-btn").forEach(function (b) { b.className = "grade-btn"; if (Number(b.dataset.grade) === g) b.classList.add("sel-" + g); }); updateAdd(); }
   function selGradeReset() { state.selGrade = null; document.querySelectorAll(".grade-btn").forEach(function (b) { b.className = "grade-btn"; }); updateAdd(); }
-  function updateAdd() { $("addBtn").disabled = !($("subject").value.trim() && state.selGrade != null); }
+  function updateAdd() { $("addBtn").disabled = !($("subject").value.trim() && state.selGrade != null); renderCompose(); }
+  function renderCompose() {
+    var box = $("composeBox"); if (!box) return;
+    var subj = $("subject").value.trim(), g = state.selGrade;
+    if (subj && g != null) {
+      box.classList.remove("hidden");
+      box.innerHTML = "К отправке: <b>" + esc(subj) + "</b> · оценка <b>" + g + "</b>" + (REWARD[g] > 0 ? " (+<b>" + fmt(REWARD[g]) + " ₽</b>)" : "");
+    } else { box.classList.add("hidden"); }
+  }
   function renderChips() {
     var box = $("subjChips"); if (!box) return;
     box.innerHTML = SUBJECTS.map(function (s) { return '<button type="button" class="chip">' + esc(s) + "</button>"; }).join("");
